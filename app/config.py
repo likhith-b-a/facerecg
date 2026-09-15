@@ -24,7 +24,6 @@ BURST_CAPTURE_INTERVAL_SEC = 1.2
 # Entry monitor
 CAMERA_INDEX = 0
 LOG_COOLDOWN_SECONDS = 15
-FRAME_SKIP = 2  # run detection every Nth frame, reuse last boxes in between
 DETECTION_DOWNSCALE = 0.6  # resize factor applied before detection; boxes scaled back up
 
 # Detector
