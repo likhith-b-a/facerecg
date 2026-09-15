@@ -1,0 +1,17 @@
+data_store/*.db
+data_store/*.db-wal
+data_store/*.db-shm
+data_store/snapshots/
+__pycache__/
+*.pyc
+venv/
+.venv/
+.venv_check/
+
+# legacy research notebooks/assets, superseded by app/face_engine.py
+*.ipynb
+Data/
+Haar Cascade/
+Plots/
+.DS_Store
+bash.exe.stackdump

@@ -1,0 +1,12 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+numpy==1.26.4
+streamlit==1.38.0
+opencv-python==4.10.0.84
+pandas==2.2.2
+retina-face==0.0.17
+tensorflow==2.16.1
+tf-keras==2.16.0
+facenet-pytorch==2.6.0
+torch==2.2.2
+torchvision==0.17.2
+Pillow==10.2.0
