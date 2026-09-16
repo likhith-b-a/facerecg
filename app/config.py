@@ -24,7 +24,7 @@ BURST_CAPTURE_INTERVAL_SEC = 1.2
 # Entry monitor
 CAMERA_INDEX = 0
 LOG_COOLDOWN_SECONDS = 15
-DETECTION_DOWNSCALE = 0.6  # resize factor applied before detection; boxes scaled back up
+DETECTION_DOWNSCALE = 0.5  # resize factor applied before detection; boxes scaled back up
 
 # Detector
 DETECTOR_SCORE_THRESHOLD = 0.6  # RetinaFace confidence cutoff; lowered from 0.9 since
