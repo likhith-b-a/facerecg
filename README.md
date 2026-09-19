@@ -18,7 +18,7 @@ working proof-of-concept implementation.
 webcam burst (capture_utils.py)
         |
         v
-  detect_faces()  -- RetinaFace, occlusion-tolerant
+  detect_faces()  -- OpenCV YuNet (ONNX), fast CPU detection
         |
         v
   get_embedding() -- facenet-pytorch InceptionResnetV1 (vggface2), 512-d, L2-normalized
@@ -55,7 +55,8 @@ the concurrent access):
 
 ## How recognition works
 
-1. **Detect**: RetinaFace finds face boxes + confidence scores. Score
+1. **Detect**: OpenCV YuNet (ONNX, weights checked into
+   `app/models/`) finds face boxes + confidence scores. Score
    threshold is lowered to `0.6` (from a typical `0.9`) because
    occluded (mask/cap) faces score lower confidence than full faces.
 2. **Embed**: face crop is resized to 160x160, normalized
@@ -81,9 +82,9 @@ venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 ```
 
-Model weights are not checked into the repo — `facenet-pytorch` and
-`retina-face` auto-download their pretrained weights on first run
+`facenet-pytorch` auto-downloads its pretrained weights on first run
 (needs internet once; see `models/README.md` for offline copy steps).
+YuNet detector weights are checked into `app/models/`, no download needed.
 
 ## Running
 

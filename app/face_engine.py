@@ -1,11 +1,13 @@
 """Face detection + embedding + open-set matching.
 
-Detection: retina-face (proven in this repo's own RetinaFace.ipynb for
-occlusion robustness). Embedding: facenet-pytorch InceptionResnetV1
-pretrained on vggface2, 512-d. Matching is open-set cosine similarity
-(max similarity across a person's stored embeddings vs a threshold) so
-new staff enroll without retraining -- not the old repo's closed 14-class
-classifier.
+Detection: OpenCV YuNet (cv2.FaceDetectorYN) -- ONNX model, runs 5-10x
+faster than RetinaFace on CPU since it skips the TF graph entirely.
+Traded off: less robust to heavy occlusion (mask/cap) than RetinaFace,
+which is why DETECTOR_SCORE_THRESHOLD stays low. Embedding:
+facenet-pytorch InceptionResnetV1 pretrained on vggface2, 512-d.
+Matching is open-set cosine similarity (max similarity across a
+person's stored embeddings vs a threshold) so new staff enroll without
+retraining -- not the old repo's closed 14-class classifier.
 """
 import os
 import sys
@@ -20,6 +22,8 @@ import db
 MatchResult = namedtuple("MatchResult", "staff_id name similarity authorized decision")
 
 _embedder = None
+_detector = None
+_detector_size = None  # (w, h) the cached _detector was created/resized for
 _embedding_cache = None  # (matrix (N,512), staff_ids, names, authorized)
 
 
@@ -31,14 +35,31 @@ def _get_embedder():
     return _embedder
 
 
+def _get_detector(width, height):
+    """YuNet needs setInputSize matched to the actual frame; cache the
+    detector and only re-set size when the frame dims change (video
+    frames are constant size, so this is a no-op after the first call)."""
+    global _detector, _detector_size
+    import cv2
+
+    if _detector is None:
+        _detector = cv2.FaceDetectorYN.create(
+            config.YUNET_MODEL_PATH, "", (width, height),
+            score_threshold=config.DETECTOR_SCORE_THRESHOLD,
+            nms_threshold=config.YUNET_NMS_THRESHOLD,
+        )
+        _detector_size = (width, height)
+    elif _detector_size != (width, height):
+        _detector.setInputSize((width, height))
+        _detector_size = (width, height)
+    return _detector
+
+
 def warm_up():
     """Force-load the detector + embedder models. Call once at app startup
     so the cost is paid before a user starts registering, not during it."""
-    import numpy as np_
-    from retinaface import RetinaFace as _RF
-
-    dummy = np_.zeros((160, 160, 3), dtype=np_.uint8)
-    _RF.detect_faces(dummy)  # triggers TF graph build + weight load, result ignored
+    dummy = np.zeros((160, 160, 3), dtype=np.uint8)
+    detect_faces(dummy)  # triggers ONNX graph load, result ignored
     _get_embedder()  # triggers torch weight load
 
 
@@ -46,23 +67,31 @@ def detect_faces(frame):
     """frame: BGR uint8 np.ndarray (as from cv2.imread/VideoCapture).
     Returns list of {"box": (x1,y1,x2,y2), "score": float, "landmarks": dict|None}.
     """
-    from retinaface import RetinaFace
+    height, width = frame.shape[:2]
+    detector = _get_detector(width, height)
+    _, results = detector.detect(frame)
 
-    obj = RetinaFace.detect_faces(frame)
     faces = []
-    if not isinstance(obj, dict):
+    if results is None:
         return faces
 
-    for key in obj:
-        item = obj[key]
-        score = float(item.get("score", 0.0))
+    for row in results:
+        x, y, w, h = row[0:4]
+        score = float(row[14])
         if score < config.DETECTOR_SCORE_THRESHOLD:
             continue
-        x1, y1, x2, y2 = item["facial_area"]
+        x1, y1, x2, y2 = int(x), int(y), int(x + w), int(y + h)
+        landmarks = {
+            "right_eye": tuple(row[4:6].astype(int)),
+            "left_eye": tuple(row[6:8].astype(int)),
+            "nose": tuple(row[8:10].astype(int)),
+            "mouth_right": tuple(row[10:12].astype(int)),
+            "mouth_left": tuple(row[12:14].astype(int)),
+        }
         faces.append({
-            "box": (int(x1), int(y1), int(x2), int(y2)),
+            "box": (x1, y1, x2, y2),
             "score": score,
-            "landmarks": item.get("landmarks"),
+            "landmarks": landmarks,
         })
     return faces
 

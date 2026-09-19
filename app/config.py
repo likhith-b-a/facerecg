@@ -27,5 +27,7 @@ LOG_COOLDOWN_SECONDS = 15
 DETECTION_DOWNSCALE = 0.5  # resize factor applied before detection; boxes scaled back up
 
 # Detector
-DETECTOR_SCORE_THRESHOLD = 0.6  # RetinaFace confidence cutoff; lowered from 0.9 since
+DETECTOR_SCORE_THRESHOLD = 0.6  # confidence cutoff; lowered from 0.9 since
 # occluded (mask/cap) faces score lower confidence than full unoccluded faces
+YUNET_MODEL_PATH = os.path.join(APP_DIR, "models", "face_detection_yunet_2023mar.onnx")
+YUNET_NMS_THRESHOLD = 0.3

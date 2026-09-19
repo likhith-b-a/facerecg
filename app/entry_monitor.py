@@ -125,7 +125,7 @@ def run(camera_index, threshold, cooldown):
             now = time.time()
             for x1, y1, x2, y2, m in last_faces:
                 color = COLORS[m.decision]
-                label = f"{m.name or 'UNKNOWN'} - {m.decision} ({m.similarity:.2f})"
+                label = f"{m.name or 'UNKNOWN'} - {m.decision}"
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, label, (x1, max(y1 - 10, 20)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
